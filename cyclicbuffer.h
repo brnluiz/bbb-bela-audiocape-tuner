@@ -9,11 +9,16 @@ public:
     bool insert(float item);
     float get(int pos);
     bool isFilled();
+
+    void setSize(int size);
+    int  getSize();
+
+    void reset(bool fast = false);
 protected:
     bool filled_;
     int idx_;
     float *buffer_;
-    int bufferSize_;
+    int size_;
 };
 
 #endif // CYCLICBUFFER_H

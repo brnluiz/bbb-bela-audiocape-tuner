@@ -16,6 +16,7 @@
 #include <cmath>
 #include <rtdk.h>
 #include "cyclicbuffer.h"
+#include "settings.h"
 
 // setup() is called once before the audio rendering starts.
 // Use it to perform any initialisation and allocation which is dependent
@@ -26,10 +27,12 @@
 //
 // Return true on success; returning false halts the program.
 
-const int sampleFreq = 44100;
+CyclicBuffer* buffer;
 
 bool setup(BeagleRTContext *context, void *userData)
 {
+    buffer = new CyclicBuffer(BUFFER_SIZE);
+
 	return true;
 }
 
@@ -37,6 +40,56 @@ bool setup(BeagleRTContext *context, void *userData)
 // Input and output are given from the audio hardware and the other
 // ADCs and DACs (if available). If only audio is available, numMatrixFrames
 // will be 0.
+float autoCorrelateFrequency(CyclicBuffer *samples, int sampleFreq)
+{
+    float sum             = 0;
+    float sumOld          = 0;
+    int thresh            = 0;
+    PeakDetectState state = PEAKDETECT_INITIAL;
+    int detectedPeriod    = 0;
+    int windowSize        = samples->getSize();
+
+    // Autocorrelation WITH Peak Detection
+    for (int i = 0; i < windowSize && (state != PEAKDETECT_FOUND); i++) {
+        sumOld = sum;
+        sum = 0;
+
+        // Auto-correlation Core
+        for (int k=0; k <windowSize-i; k++) {
+            sum += samples->get(k) * samples->get(k+i);
+        }
+
+        // Peak Detect State Machine
+        switch (state) {
+            case PEAKDETECT_INITIAL:
+                thresh = sum / 2;
+                state = PEAKDETECT_POSITIVE;
+                break;
+
+            case PEAKDETECT_POSITIVE:
+                if ( (sum > thresh) && (sum - sumOld) > 0 ) {
+                    state = PEAKDETECT_NEGATIVE;
+                }
+                break;
+
+            case PEAKDETECT_NEGATIVE:
+                if ((sum - sumOld) <= 0) {
+                    detectedPeriod = i;
+                    state = PEAKDETECT_FOUND;
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    if (detectedPeriod < 1) {
+      return 0;
+    }
+
+    return sampleFreq/detectedPeriod;
+}
 
 void render(BeagleRTContext *context, void *userData)
 {
@@ -44,7 +97,19 @@ void render(BeagleRTContext *context, void *userData)
 		// Get the input
 		float input = (context->audioIn[n*context->audioChannels] + context->audioIn[n*context->audioChannels+1]) * 0.5;
 
+        if(buffer->isFilled()) {
+            float freq = autoCorrelateFrequency(buffer, BBB_SAMPLE_FREQ);
+
+            if(freq != 0) {
+                rt_printf("frequency: %f\n", freq);
+            }
+            buffer->reset(true);
+        }
+
+        buffer->insert(input);
 	}
+
+
 }
 
 // cleanup_render() is called once at the end, after the audio has stopped.
@@ -57,4 +122,5 @@ void cleanup(BeagleRTContext *context, void *userData)
 	 * You may or may not need anything in this function, depending
 	 * on your implementation.
 	 */
+    delete buffer;
 }

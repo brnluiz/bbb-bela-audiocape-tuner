@@ -8,5 +8,6 @@ SOURCES += main.cpp \
     cyclicbuffer.cpp
 
 HEADERS += \
-    cyclicbuffer.h
+    cyclicbuffer.h \
+    settings.h
 
