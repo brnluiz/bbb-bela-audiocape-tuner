@@ -2,7 +2,6 @@
 #define SETTINGS_H
 
 #define BUFFER_SIZE     4096
-#define BBB_SAMPLE_FREQ 44100
 
 typedef enum {
     PEAKDETECT_INITIAL,

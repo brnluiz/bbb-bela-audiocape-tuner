@@ -36,13 +36,11 @@ float CyclicBuffer::get(int pos) {
     }
 }
 
-bool CyclicBuffer::isFilled()
-{
+bool CyclicBuffer::isFilled() {
     return filled_;
 }
 
-void CyclicBuffer::setSize(int size)
-{
+void CyclicBuffer::setSize(int size) {
     free(buffer_);
 
     size_ = size;
@@ -56,14 +54,13 @@ void CyclicBuffer::setSize(int size)
     reset();
 }
 
-int CyclicBuffer::getSize()
-{
+int CyclicBuffer::getSize() {
     return size_;
 }
 
-void CyclicBuffer::reset(bool fast)
-{
+void CyclicBuffer::reset(bool fast) {
     filled_ = false;
+    idx_ = 0;
 
     if(fast) {
         return ;

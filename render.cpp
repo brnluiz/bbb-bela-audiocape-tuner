@@ -16,6 +16,7 @@
 #include <cmath>
 #include <rtdk.h>
 #include "cyclicbuffer.h"
+#include "average.h"
 #include "settings.h"
 
 // setup() is called once before the audio rendering starts.
@@ -28,10 +29,18 @@
 // Return true on success; returning false halts the program.
 
 CyclicBuffer* buffer;
+Average* average;
 
 bool setup(BeagleRTContext *context, void *userData)
 {
     buffer = new CyclicBuffer(BUFFER_SIZE);
+    average = new Average();
+
+    average->insert(2);
+    average->insert(0);
+    average->insert(4);
+    average->insert(0);
+    average->insert(4);
 
 	return true;
 }
@@ -40,7 +49,7 @@ bool setup(BeagleRTContext *context, void *userData)
 // Input and output are given from the audio hardware and the other
 // ADCs and DACs (if available). If only audio is available, numMatrixFrames
 // will be 0.
-float autoCorrelateFrequency(CyclicBuffer *samples, int sampleFreq)
+float detectFrequency(CyclicBuffer *samples, int sampleFreq)
 {
     float sum             = 0;
     float sumOld          = 0;
@@ -55,7 +64,7 @@ float autoCorrelateFrequency(CyclicBuffer *samples, int sampleFreq)
         sum = 0;
 
         // Auto-correlation Core
-        for (int k=0; k <windowSize-i; k++) {
+        for (int k = 0; k < windowSize-i; k++) {
             sum += samples->get(k) * samples->get(k+i);
         }
 
@@ -98,18 +107,21 @@ void render(BeagleRTContext *context, void *userData)
 		float input = (context->audioIn[n*context->audioChannels] + context->audioIn[n*context->audioChannels+1]) * 0.5;
 
         if(buffer->isFilled()) {
-            float freq = autoCorrelateFrequency(buffer, BBB_SAMPLE_FREQ);
+            float freq = detectFrequency(buffer, context->audioSampleRate);
+            printf("Frequency: %f\n", freq);
+//            average->insert(freq);
 
-            if(freq != 0) {
-                rt_printf("frequency: %f\n", freq);
-            }
             buffer->reset(true);
         }
 
         buffer->insert(input);
+
 	}
 
-
+//    if(average->getSize() >= 5) {
+//        printf("Frequency: %f | size: %i\n", average->arithmetic(), average->getSize());
+//        average->reset();
+//    }
 }
 
 // cleanup_render() is called once at the end, after the audio has stopped.
