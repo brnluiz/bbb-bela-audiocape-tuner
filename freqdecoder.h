@@ -3,6 +3,7 @@
 
 #define NUM_NOTES   12
 #define NUM_OCTAVES 9
+#define F_TOLERANCE .03
 
 #include <string>
 

@@ -139,9 +139,8 @@ FreqDecoder::FreqDecoder() {
 NotesParameters FreqDecoder::get(float freq) {
     for(int i = 0; i < NUM_OCTAVES*NUM_NOTES; i++) {
         float value      = table_[i].freq;
-        float lowMargin  = value * 0.97;
-        float highMargin = value * 1.03;
-
+        float lowMargin  = value * (1 - F_TOLERANCE);
+        float highMargin = value * (1 + F_TOLERANCE);
 
         if(freq >= lowMargin && freq <= highMargin) {
             return table_[i];
