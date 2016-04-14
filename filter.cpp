@@ -49,6 +49,10 @@ void Filter::reset(){
 }
 
 float Filter::run(float sample) {
+    if(cutoff_ == 0) {
+        return sample;
+    }
+
     float out = 0;
 
     // Create the filter_ output

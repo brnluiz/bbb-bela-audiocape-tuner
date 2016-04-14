@@ -17,7 +17,7 @@
 #include <rtdk.h>
 #include "cyclicbuffer.h"
 #include "average.h"
-#include "filterbutterworth.h"
+#include "lowfilterbutterworth.h"
 #include "settings.h"
 #include "appparameters.h"
 
@@ -31,7 +31,7 @@
 // Return true on success; returning false halts the program.
 
 CyclicBuffer* buffer;
-FilterButterworth* filter;
+LowFilterButterworth* filter;
 
 bool setup(BeagleRTContext *context, void *userData)
 {
@@ -39,7 +39,7 @@ bool setup(BeagleRTContext *context, void *userData)
     printf("Filter frequency: %f | Buffer size: %f\n", params.filterFreq, params.bufferSize);
 
     buffer  = new CyclicBuffer(params.bufferSize);
-    filter  = new FilterButterworth(params.filterFreq, context->audioSampleRate);
+    filter  = new LowFilterButterworth(params.filterFreq, context->audioSampleRate);
 
     return true;
 }
@@ -64,7 +64,11 @@ float detectFrequency(CyclicBuffer *samples, int sampleFreq)
 
         // Auto-correlation Core
         for (int k = 0; k < windowSize-i; k++) {
-            sum += samples->get(k) * samples->get(k+i);
+            if(k+i < windowSize) {
+                sum += samples->get(k) * samples->get(k+i);
+            } else {
+                break;
+            }
         }
 
         // Peak Detect State Machine
@@ -105,23 +109,16 @@ void render(BeagleRTContext *context, void *userData)
 		// Get the input
 		float input = (context->audioIn[n*context->audioChannels] + context->audioIn[n*context->audioChannels+1]) * 0.5;
 
+        float filtered = filter->run(input);
         if(buffer->isFilled()) {
             float freq = detectFrequency(buffer, context->audioSampleRate);
-            freq = filter->run(freq);
             printf("Frequency: %f\n", freq);
-//            average->insert(freq);
-
             buffer->reset(true);
         }
 
-        buffer->insert(input);
+        buffer->insert(filtered);
 
 	}
-
-//    if(average->getSize() >= 5) {
-//        printf("Frequency: %f | size: %i\n", average->arithmetic(), average->getSize());
-//        average->reset();
-//    }
 }
 
 // cleanup_render() is called once at the end, after the audio has stopped.

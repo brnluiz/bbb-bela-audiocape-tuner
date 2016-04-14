@@ -8,13 +8,13 @@ SOURCES += main.cpp \
     cyclicbuffer.cpp \
     average.cpp \
     filter.cpp \
-    filterbutterworth.cpp
+    lowfilterbutterworth.cpp
 
 HEADERS += \
     cyclicbuffer.h \
     settings.h \
     average.h \
     filter.h \
-    filterbutterworth.h \
-    appparameters.h
+    appparameters.h \
+    lowfilterbutterworth.h
 

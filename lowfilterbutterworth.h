@@ -3,9 +3,9 @@
 
 #include "filter.h"
 
-class FilterButterworth: public Filter {
+class LowFilterButterworth: public Filter {
 public:
-    FilterButterworth(float cutoffFreq, float samplingFreq);
+    LowFilterButterworth(float cutoffFreq, float samplingFreq);
 protected:
     void calcParams();
 };

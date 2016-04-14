@@ -1,12 +1,12 @@
-#include "filterbutterworth.h"
+#include "lowfilterbutterworth.h"
 #include "filter.h"
 #include <cmath>
 
-FilterButterworth::FilterButterworth(float cutoffFreq, float samplingFreq): Filter(2, cutoffFreq, samplingFreq) {
+LowFilterButterworth::LowFilterButterworth(float cutoffFreq, float samplingFreq): Filter(2, cutoffFreq, samplingFreq) {
     calcParams();
 }
 
-void FilterButterworth::calcParams() {
+void LowFilterButterworth::calcParams() {
     const float c = 2 * sampling_;
     const float d = c * 1.4142;
     const float w = 2 * M_PI * cutoff_;

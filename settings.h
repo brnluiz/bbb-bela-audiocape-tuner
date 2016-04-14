@@ -2,7 +2,7 @@
 #define SETTINGS_H
 
 #define BUFFER_SIZE 2048
-#define FILTER_FREQ 1000
+#define FILTER_FREQ 400
 
 typedef enum {
     PEAKDETECT_INITIAL,
