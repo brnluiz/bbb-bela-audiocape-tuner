@@ -29,24 +29,16 @@ using std::cout;
 using std::endl;
 using std::string;
 
-// setup() is called once before the audio rendering starts.
-// Use it to perform any initialisation and allocation which is dependent
-// on the period size or sample rate.
-//
-// userData holds an opaque pointer to a data structure that was passed
-// in from the call to initAudio().
-//
-// Return true on success; returning false halts the program.
-
 CyclicBuffer* buffer;
 LowFilterButterworth* filter;
 FreqDecoder* freqDecoder;
 
-bool setup(BeagleRTContext *context, void *userData)
-{
+bool setup(BeagleRTContext *context, void *userData) {
+    // Get the params and print them
     Parameters params = *(Parameters *)userData;
     printf("Filter frequency: %f | Buffer size: %f\n", params.filterFreq, params.bufferSize);
 
+    // Allocate dynamic variables (don't forget to remove them at cleanup() )
     buffer  = new CyclicBuffer(params.bufferSize);
     filter  = new LowFilterButterworth(params.filterFreq, context->audioSampleRate);
     freqDecoder = new FreqDecoder();
@@ -54,16 +46,11 @@ bool setup(BeagleRTContext *context, void *userData)
     return true;
 }
 
-// render() is called regularly at the highest priority by the audio engine.
-// Input and output are given from the audio hardware and the other
-// ADCs and DACs (if available). If only audio is available, numMatrixFrames
-// will be 0.
-
 float autoCorr(CyclicBuffer *samples, int lag) {
-    // Auto-correlation Core
     float sum = 0;
     int windowSize = samples->getSize();
 
+    // Auto-correlation Core
     for (int k = 0; k < (windowSize - lag); k++) {
         sum += samples->get(k) * samples->get(k+lag);
     }
@@ -71,8 +58,7 @@ float autoCorr(CyclicBuffer *samples, int lag) {
     return sum;
 }
 
-float detectFrequency(CyclicBuffer *samples, int sampleFreq)
-{
+float detectFrequency(CyclicBuffer *samples, int sampleFreq) {
     float sum             = 0;
     float sumOld          = 0;
     int thresh            = 0;
@@ -120,19 +106,25 @@ float detectFrequency(CyclicBuffer *samples, int sampleFreq)
     return sampleFreq/detectedPeriod;
 }
 
-void render(BeagleRTContext *context, void *userData)
-{
+void render(BeagleRTContext *context, void *userData) {
 	for(unsigned int n = 0; n < context->audioFrames; n++) {
 		// Get the input
-		float input = (context->audioIn[n*context->audioChannels] + context->audioIn[n*context->audioChannels+1]) * 0.5;
+        float input = (context->audioIn[n*context->audioChannels]
+                + context->audioIn[n*context->audioChannels+1]) * 0.5;
 
+        // Filter the input based on the passed cut-off frequency
         float filtered = filter->run(input);
-        if(buffer->isFilled()) {
-            float freq  = detectFrequency(buffer, context->audioSampleRate);
 
-            if(freq != 0) {
+        // If the buffer is full, then detect the frequency (it needs a certain amount of
+        // samples to work)
+        if (buffer->isFilled()) {
+            float freq = detectFrequency(buffer, context->audioSampleRate);
+
+            // Output for the user
+            if (freq != 0) {
                 string note = freqDecoder->getNote(freq);
-                cout << "Frequency: " << freq << " | Note: " << note << endl;
+                cout << "Frequency: " << freq << " | "
+                     << "Note: " << note << endl;
             }
             buffer->reset(true);
         }
@@ -142,16 +134,7 @@ void render(BeagleRTContext *context, void *userData)
 	}
 }
 
-// cleanup_render() is called once at the end, after the audio has stopped.
-// Release any resources that were allocated in initialise_render().
-
-void cleanup(BeagleRTContext *context, void *userData)
-{
-	/* TASK:
-	 * If you allocate any memory, be sure to release it here.
-	 * You may or may not need anything in this function, depending
-	 * on your implementation.
-	 */
+void cleanup(BeagleRTContext *context, void *userData) {
     delete buffer;
     delete filter;
     delete freqDecoder;
