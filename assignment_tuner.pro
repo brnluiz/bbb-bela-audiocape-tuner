@@ -8,7 +8,8 @@ SOURCES += main.cpp \
     cyclicbuffer.cpp \
     average.cpp \
     filter.cpp \
-    lowfilterbutterworth.cpp
+    lowfilterbutterworth.cpp \
+    freqdecoder.cpp
 
 HEADERS += \
     cyclicbuffer.h \
@@ -16,5 +17,6 @@ HEADERS += \
     average.h \
     filter.h \
     appparameters.h \
-    lowfilterbutterworth.h
+    lowfilterbutterworth.h \
+    freqdecoder.h
 

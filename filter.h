@@ -28,8 +28,6 @@ protected:
 
     float cutoff_;
     float sampling_;
-
-    bool firstRun_;
 };
 
 #endif // FILTER_H

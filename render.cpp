@@ -20,6 +20,14 @@
 #include "lowfilterbutterworth.h"
 #include "settings.h"
 #include "appparameters.h"
+#include "freqdecoder.h"
+
+#include <iostream>
+#include <string>
+
+using std::cout;
+using std::endl;
+using std::string;
 
 // setup() is called once before the audio rendering starts.
 // Use it to perform any initialisation and allocation which is dependent
@@ -32,6 +40,7 @@
 
 CyclicBuffer* buffer;
 LowFilterButterworth* filter;
+FreqDecoder* freqDecoder;
 
 bool setup(BeagleRTContext *context, void *userData)
 {
@@ -40,6 +49,7 @@ bool setup(BeagleRTContext *context, void *userData)
 
     buffer  = new CyclicBuffer(params.bufferSize);
     filter  = new LowFilterButterworth(params.filterFreq, context->audioSampleRate);
+    freqDecoder = new FreqDecoder();
 
     return true;
 }
@@ -48,6 +58,19 @@ bool setup(BeagleRTContext *context, void *userData)
 // Input and output are given from the audio hardware and the other
 // ADCs and DACs (if available). If only audio is available, numMatrixFrames
 // will be 0.
+
+float autoCorr(CyclicBuffer *samples, int lag) {
+    // Auto-correlation Core
+    float sum = 0;
+    int windowSize = samples->getSize();
+
+    for (int k = 0; k < (windowSize - lag); k++) {
+        sum += samples->get(k) * samples->get(k+lag);
+    }
+
+    return sum;
+}
+
 float detectFrequency(CyclicBuffer *samples, int sampleFreq)
 {
     float sum             = 0;
@@ -56,25 +79,19 @@ float detectFrequency(CyclicBuffer *samples, int sampleFreq)
     PeakDetectState state = PEAKDETECT_INITIAL;
     int detectedPeriod    = 0;
     int windowSize        = samples->getSize();
+    float acMax           = autoCorr(samples, 0);
 
     // Autocorrelation WITH Peak Detection
     for (int i = 0; i < windowSize && (state != PEAKDETECT_FOUND); i++) {
         sumOld = sum;
-        sum = 0;
 
-        // Auto-correlation Core
-        for (int k = 0; k < windowSize-i; k++) {
-            if(k+i < windowSize) {
-                sum += samples->get(k) * samples->get(k+i);
-            } else {
-                break;
-            }
-        }
+        // Auto-correlation
+        sum = autoCorr(samples, i);
 
         // Peak Detect State Machine
         switch (state) {
             case PEAKDETECT_INITIAL:
-                thresh = sum / 2;
+                thresh = acMax * .5;
                 state = PEAKDETECT_POSITIVE;
                 break;
 
@@ -111,8 +128,12 @@ void render(BeagleRTContext *context, void *userData)
 
         float filtered = filter->run(input);
         if(buffer->isFilled()) {
-            float freq = detectFrequency(buffer, context->audioSampleRate);
-            printf("Frequency: %f\n", freq);
+            float freq  = detectFrequency(buffer, context->audioSampleRate);
+
+            if(freq != 0) {
+                string note = freqDecoder->getNote(freq);
+                cout << "Frequency: " << freq << " | Note: " << note << endl;
+            }
             buffer->reset(true);
         }
 
@@ -133,4 +154,5 @@ void cleanup(BeagleRTContext *context, void *userData)
 	 */
     delete buffer;
     delete filter;
+    delete freqDecoder;
 }
