@@ -17,6 +17,8 @@
 #include <signal.h>
 #include <getopt.h>
 #include <BeagleRT.h>
+#include "appparameters.h"
+#include "settings.h"
 
 using namespace std;
 
@@ -39,14 +41,16 @@ void usage(const char * processName)
 int main(int argc, char *argv[])
 {
 	BeagleRTInitSettings settings;	// Standard audio settings
-    int userSettings = 0;
+
+    Parameters params;
+    params.filterFreq = FILTER_FREQ;
+    params.bufferSize = BUFFER_SIZE;
 
 	struct option customOptions[] =
 	{
 		{"help", 0, NULL, 'h'},
 		{"frequency", 1, NULL, 'f'},
-		{"linkwitz", 1, NULL, 'l'},
-		{"bassboost", 1, NULL, 'b'},
+        {"buffer", 1, NULL, 'b'},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -56,27 +60,27 @@ int main(int argc, char *argv[])
 	// Parse command-line arguments
 	while (1) {
 		int c;
-		if ((c = BeagleRT_getopt_long(argc, argv, "hf:lb", customOptions, &settings)) < 0)
-				break;
+        if ((c = BeagleRT_getopt_long(argc, argv, "hf:b:", customOptions, &settings)) < 0) {
+            break;
+        }
+
 		switch (c) {
-		case 'h':
-				usage(basename(argv[0]));
-				exit(0);
         case 'f':
-                break;
-        case 'l':
-        		break;
+            params.filterFreq = atof(optarg);
+            break;
         case 'b':
-        		break;        		
+            params.bufferSize = atof(optarg);
+            break;
+        case 'h':
 		case '?':
 		default:
-				usage(basename(argv[0]));
-				exit(1);
+            usage(basename(argv[0]));
+            exit(1);
 		}
 	}
 
 	// Initialise the PRU audio device
-	if(BeagleRT_initAudio(&settings, &userSettings) != 0) {
+    if(BeagleRT_initAudio(&settings, &params) != 0) {
 		cout << "Error: unable to initialise audio" << endl;
 		return -1;
 	}

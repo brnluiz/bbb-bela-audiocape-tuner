@@ -17,7 +17,9 @@
 #include <rtdk.h>
 #include "cyclicbuffer.h"
 #include "average.h"
+#include "filterbutterworth.h"
 #include "settings.h"
+#include "appparameters.h"
 
 // setup() is called once before the audio rendering starts.
 // Use it to perform any initialisation and allocation which is dependent
@@ -29,20 +31,17 @@
 // Return true on success; returning false halts the program.
 
 CyclicBuffer* buffer;
-Average* average;
+FilterButterworth* filter;
 
 bool setup(BeagleRTContext *context, void *userData)
 {
-    buffer = new CyclicBuffer(BUFFER_SIZE);
-    average = new Average();
+    Parameters params = *(Parameters *)userData;
+    printf("Filter frequency: %f | Buffer size: %f\n", params.filterFreq, params.bufferSize);
 
-    average->insert(2);
-    average->insert(0);
-    average->insert(4);
-    average->insert(0);
-    average->insert(4);
+    buffer  = new CyclicBuffer(params.bufferSize);
+    filter  = new FilterButterworth(params.filterFreq, context->audioSampleRate);
 
-	return true;
+    return true;
 }
 
 // render() is called regularly at the highest priority by the audio engine.
@@ -108,6 +107,7 @@ void render(BeagleRTContext *context, void *userData)
 
         if(buffer->isFilled()) {
             float freq = detectFrequency(buffer, context->audioSampleRate);
+            freq = filter->run(freq);
             printf("Frequency: %f\n", freq);
 //            average->insert(freq);
 
@@ -135,4 +135,5 @@ void cleanup(BeagleRTContext *context, void *userData)
 	 * on your implementation.
 	 */
     delete buffer;
+    delete filter;
 }

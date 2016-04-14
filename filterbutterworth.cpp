@@ -1,5 +1,34 @@
 #include "filterbutterworth.h"
+#include "filter.h"
+#include <cmath>
 
-FilterButterworth::FilterButterworth()
-{
+FilterButterworth::FilterButterworth(float cutoffFreq, float samplingFreq): Filter(2, cutoffFreq, samplingFreq) {
+    calcParams();
+}
+
+void FilterButterworth::calcParams() {
+    const float c = 2 * sampling_;
+    const float d = c * 1.4142;
+    const float w = 2 * M_PI * cutoff_;
+
+    // Parameters calcs
+    a_[0] = pow(c,2) + d*w + pow(w,2);
+    a_[1] = (2*pow(w,2) - 2*pow(c,2));
+    a_[2] = (pow(c,2) - d*w + pow(w,2));
+
+    b_[0] = (pow(w,2));
+    b_[1] = (2*pow(w,2));
+    b_[2] = (pow(w,2));
+
+    // Divide all parameters by the common factor of a0
+    for(int i = 0; i < size_; i++) {
+        b_[i]  = b_[i]/a_[0];
+
+        if(i != 0) {
+            a_[i]  = a_[i]/a_[0];
+        }
+    }
+
+    // Divide the a[0]
+    a_[0] = 1;
 }

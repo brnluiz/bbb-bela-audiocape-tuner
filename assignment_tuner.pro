@@ -5,9 +5,16 @@ CONFIG -= qt
 
 SOURCES += main.cpp \
     render.cpp \
-    cyclicbuffer.cpp
+    cyclicbuffer.cpp \
+    average.cpp \
+    filter.cpp \
+    filterbutterworth.cpp
 
 HEADERS += \
     cyclicbuffer.h \
-    settings.h
+    settings.h \
+    average.h \
+    filter.h \
+    filterbutterworth.h \
+    appparameters.h
 
