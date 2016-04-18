@@ -8,7 +8,7 @@ typedef enum {
     PEAKDETECT_INITIAL,
     PEAKDETECT_POSITIVE,
     PEAKDETECT_NEGATIVE,
-    PEAKDETECT_FOUND,
+    PEAKDETECT_FINAL,
 } PeakDetectState;
 
 #endif // SETTINGS_H

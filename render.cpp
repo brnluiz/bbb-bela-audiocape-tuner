@@ -65,10 +65,14 @@ float detectFrequency(CyclicBuffer *samples, int sampleFreq) {
     PeakDetectState state = PEAKDETECT_INITIAL;
     int detectedPeriod    = 0;
     int windowSize        = samples->getSize();
-    float acMax           = autoCorr(samples, 0);
 
+    const int peakFreqsSize = 8;
+
+    int peakPeriods[peakFreqsSize] = {0};
+    float autoCorrFreqs[peakFreqsSize] = {0};
+    int peakFreqsIdx = 0;
     // Autocorrelation WITH Peak Detection
-    for (int i = 0; i < windowSize && (state != PEAKDETECT_FOUND); i++) {
+    for (int i = 0; i < windowSize; i++) {
         sumOld = sum;
 
         // Auto-correlation
@@ -77,20 +81,28 @@ float detectFrequency(CyclicBuffer *samples, int sampleFreq) {
         // Peak Detect State Machine
         switch (state) {
             case PEAKDETECT_INITIAL:
-                thresh = acMax * .5;
+                thresh = sum * .5;
                 state = PEAKDETECT_POSITIVE;
                 break;
 
             case PEAKDETECT_POSITIVE:
-                if ( (sum > thresh) && (sum - sumOld) > 0 ) {
+                if ((sum > thresh) && (sum - sumOld) > 0) {
                     state = PEAKDETECT_NEGATIVE;
                 }
                 break;
 
             case PEAKDETECT_NEGATIVE:
                 if ((sum - sumOld) <= 0) {
-                    detectedPeriod = i;
-                    state = PEAKDETECT_FOUND;
+                    if(peakFreqsIdx >= (peakFreqsSize-1)) {
+                        state = PEAKDETECT_FINAL;
+                        break;
+                    }
+
+                    peakPeriods[peakFreqsIdx] = i;
+                    autoCorrFreqs[peakFreqsIdx] = sum;
+                    peakFreqsIdx++;
+
+                    state = PEAKDETECT_INITIAL;
                 }
                 break;
 
@@ -98,6 +110,14 @@ float detectFrequency(CyclicBuffer *samples, int sampleFreq) {
                 break;
         }
     }
+
+    int bestAutoCorrIdx = 0;
+    for (int i = 0; i < peakFreqsSize; i++) {
+        if(autoCorrFreqs[i] > autoCorrFreqs[bestAutoCorrIdx]) {
+            bestAutoCorrIdx = i;
+        }
+    }
+    detectedPeriod = peakPeriods[bestAutoCorrIdx];
 
     if (detectedPeriod < 1) {
       return 0;
@@ -123,8 +143,7 @@ void render(BeagleRTContext *context, void *userData) {
             // Output for the user
             if (freq != 0) {
                 string note = freqDecoder->getNote(freq);
-                cout << "Frequency: " << freq << " | "
-                     << "Note: " << note << endl;
+                rt_printf("Frequency: %f | Note: %s\n", freq, note.c_str());
             }
             buffer->reset(true);
         }
