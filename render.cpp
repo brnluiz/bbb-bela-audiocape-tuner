@@ -21,6 +21,7 @@
 #include "settings.h"
 #include "appparameters.h"
 #include "freqdecoder.h"
+#include "peakdata.h"
 
 #include <iostream>
 #include <string>
@@ -66,13 +67,14 @@ float detectFrequency(CyclicBuffer *samples, int sampleFreq) {
     int detectedPeriod    = 0;
     int windowSize        = samples->getSize();
 
-    const int peakFreqsSize = 8;
+    float threshAutoCorr = 10.00;
 
-    int peakPeriods[peakFreqsSize] = {0};
-    float autoCorrFreqs[peakFreqsSize] = {0};
-    int peakFreqsIdx = 0;
-    // Autocorrelation WITH Peak Detection
-    for (int i = 0; i < windowSize; i++) {
+    // Will save the detected frequencies + the auto correlation index
+    int peaksIdx            = 0;
+    const int peakFreqsSize = 8;
+    PeakData peaksData[peakFreqsSize];
+
+    for (int i = 0; i < windowSize && (state != PEAKDETECT_FINAL); i++) {
         sumOld = sum;
 
         // Auto-correlation
@@ -93,35 +95,41 @@ float detectFrequency(CyclicBuffer *samples, int sampleFreq) {
 
             case PEAKDETECT_NEGATIVE:
                 if ((sum - sumOld) <= 0) {
-                    if(peakFreqsIdx >= (peakFreqsSize-1)) {
-                        state = PEAKDETECT_FINAL;
-                        break;
-                    }
-
-                    peakPeriods[peakFreqsIdx] = i;
-                    autoCorrFreqs[peakFreqsIdx] = sum;
-                    peakFreqsIdx++;
-
-                    state = PEAKDETECT_INITIAL;
+                    state = PEAKDETECT_FOUND;
+                } else {
+                    break;
                 }
-                break;
+            case PEAKDETECT_FOUND:
+                // If you already detected a good quantity of frequency peaks
+                if (peaksIdx >= (peakFreqsSize-1)) {
+                    state = PEAKDETECT_FINAL;
+                    break;
+                }
+                // Save the info about the detected frequency peak
+                peaksData[peaksIdx].period   = i;
+                peaksData[peaksIdx].autoCorr = sum;
+                peaksIdx++;
+
+                state = PEAKDETECT_INITIAL;
 
             default:
                 break;
         }
     }
 
+    // Get the detected period based on the auto-correlation index
     int bestAutoCorrIdx = 0;
     for (int i = 0; i < peakFreqsSize; i++) {
-        if(autoCorrFreqs[i] > autoCorrFreqs[bestAutoCorrIdx]) {
+        if(peaksData[i].autoCorr > peaksData[bestAutoCorrIdx].autoCorr) {
             bestAutoCorrIdx = i;
         }
     }
-    detectedPeriod = peakPeriods[bestAutoCorrIdx];
-
-    if (detectedPeriod < 1) {
+    // Protection against divisions by 0 and unwanted frequencies
+    if (detectedPeriod < 1 && (peaksData[bestAutoCorrIdx].autoCorr < threshAutoCorr)) {
       return 0;
     }
+
+    detectedPeriod = peaksData[bestAutoCorrIdx].period;
 
     return sampleFreq/detectedPeriod;
 }

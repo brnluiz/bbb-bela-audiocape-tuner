@@ -18,5 +18,6 @@ HEADERS += \
     filter.h \
     appparameters.h \
     lowfilterbutterworth.h \
-    freqdecoder.h
+    freqdecoder.h \
+    peakdata.h
 
