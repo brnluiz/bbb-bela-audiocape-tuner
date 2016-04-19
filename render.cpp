@@ -11,7 +11,7 @@
 #include <BeagleRT.h>
 #include <cmath>
 #include <rtdk.h>
-#include "cyclicbuffer.h"
+#include "circularbuffer.h"
 #include "filterfactory.h"
 #include "settings.h"
 #include "appparameters.h"
@@ -21,7 +21,7 @@
 #include <iostream>
 #include <string>
 
-CyclicBuffer* buffer;
+CircularBuffer* buffer;
 Filter* filter;
 FreqDecoder* freqDecoder;
 
@@ -34,7 +34,7 @@ bool setup(BeagleRTContext *context, void *userData) {
         FilterFactory filterFactory(context->audioSampleRate);
 
         // Allocate dynamic variables (don't forget to remove them at cleanup() )
-        buffer      = new CyclicBuffer(params.bufferSize);
+        buffer      = new CircularBuffer(params.bufferSize);
         filter      = filterFactory.make("low-butterworth", params.filterFreq);
         freqDecoder = new FreqDecoder();
 
@@ -47,7 +47,7 @@ bool setup(BeagleRTContext *context, void *userData) {
     return true;
 }
 
-float autoCorr(CyclicBuffer *samples, int lag) {
+float autoCorr(CircularBuffer *samples, int lag) {
     float sum = 0;
     int windowSize = samples->getSize();
 
@@ -59,7 +59,7 @@ float autoCorr(CyclicBuffer *samples, int lag) {
     return sum;
 }
 
-float detectFrequency(CyclicBuffer *samples, int sampleFreq) {
+float detectFrequency(CircularBuffer *samples, int sampleFreq) {
     float sum             = 0;
     float sumOld          = 0;
     int thresh            = 0;
@@ -153,8 +153,17 @@ void render(BeagleRTContext *context, void *userData) {
 
                     // Output for the user
                     if (freq != 0) {
-                        std::string note = freqDecoder->getNote(freq);
-                        rt_printf("Frequency: %f | Note: %s\n", freq, note.c_str());
+                        NotesParameters freqData = freqDecoder->get(freq);
+                        std::string indication = "Tuned!";
+
+                        if (freq > freqData.freq*1.01) {
+                            indication = "Decrease the frequency!";
+                        } else if(freq < freqData.freq*.99) {
+                            indication = "Increase the frequency!";
+                        }
+
+                        rt_printf("Frequency: %4.2f | Note: %s (%4.2f) | %s\n",
+                                  freq, freqData.name, freqData.freq, indication.c_str());
                     }
                     buffer->reset(true);
                 }

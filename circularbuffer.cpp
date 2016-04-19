@@ -8,21 +8,21 @@
  * Queen Mary, University of London
  */
 
-#include "cyclicbuffer.h"
+#include "circularbuffer.h"
 #include <cstdlib>
 #include <cstdio>
 
 #include <stdexcept>
 
-CyclicBuffer::CyclicBuffer(int bufferSize): filled_(false), idx_(0), size_(bufferSize) {
+CircularBuffer::CircularBuffer(int bufferSize): filled_(false), idx_(0), size_(bufferSize) {
     setSize(bufferSize);
 }
 
-CyclicBuffer::~CyclicBuffer() {
+CircularBuffer::~CircularBuffer() {
     free(buffer_);
 }
 
-bool CyclicBuffer::insert(float item) {
+bool CircularBuffer::insert(float item) {
     buffer_[idx_] = item;
     idx_++;
 
@@ -40,7 +40,7 @@ bool CyclicBuffer::insert(float item) {
     return false;
 }
 
-float CyclicBuffer::get(int pos) {
+float CircularBuffer::get(int pos) {
     if (pos < size_) {
         return buffer_[pos];
     } else {
@@ -48,11 +48,11 @@ float CyclicBuffer::get(int pos) {
     }
 }
 
-bool CyclicBuffer::isFilled() {
+bool CircularBuffer::isFilled() {
     return filled_;
 }
 
-void CyclicBuffer::setSize(int size) {
+void CircularBuffer::setSize(int size) {
     free(buffer_);
 
     size_ = size;
@@ -65,11 +65,11 @@ void CyclicBuffer::setSize(int size) {
     reset();
 }
 
-int CyclicBuffer::getSize() {
+int CircularBuffer::getSize() {
     return size_;
 }
 
-void CyclicBuffer::reset(bool fast) {
+void CircularBuffer::reset(bool fast) {
     filled_ = false;
     idx_ = 0;
 

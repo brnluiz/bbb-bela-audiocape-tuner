@@ -5,19 +5,19 @@ CONFIG -= qt
 
 SOURCES += main.cpp \
     render.cpp \
-    cyclicbuffer.cpp \
     filter.cpp \
     lowfilterbutterworth.cpp \
     freqdecoder.cpp \
-    filterfactory.cpp
+    filterfactory.cpp \
+    circularbuffer.cpp
 
 HEADERS += \
-    cyclicbuffer.h \
     settings.h \
     filter.h \
     appparameters.h \
     lowfilterbutterworth.h \
     freqdecoder.h \
     peakdata.h \
-    filterfactory.h
+    filterfactory.h \
+    circularbuffer.h
 

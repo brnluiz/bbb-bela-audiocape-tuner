@@ -8,13 +8,13 @@
  * Queen Mary, University of London
  */
 
-#ifndef CYCLICBUFFER_H
-#define CYCLICBUFFER_H
+#ifndef CIRCULARBUFFER_H
+#define CIRCULARBUFFER_H
 
-class CyclicBuffer {
+class CircularBuffer {
 public:
-    CyclicBuffer(int bufferSize);
-    ~CyclicBuffer();
+    CircularBuffer(int bufferSize);
+    ~CircularBuffer();
 
     bool insert(float item);
     float get(int pos);
