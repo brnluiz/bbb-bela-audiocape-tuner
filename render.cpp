@@ -16,7 +16,7 @@
 #include <cmath>
 #include <rtdk.h>
 #include "cyclicbuffer.h"
-#include "lowfilterbutterworth.h"
+#include "filterfactory.h"
 #include "settings.h"
 #include "appparameters.h"
 #include "freqdecoder.h"
@@ -26,7 +26,7 @@
 #include <string>
 
 CyclicBuffer* buffer;
-LowFilterButterworth* filter;
+Filter* filter;
 FreqDecoder* freqDecoder;
 
 bool setup(BeagleRTContext *context, void *userData) {
@@ -35,9 +35,11 @@ bool setup(BeagleRTContext *context, void *userData) {
     printf("Filter frequency: %f | Buffer size: %f\n", params.filterFreq, params.bufferSize);
 
     try {
+        FilterFactory filterFactory(context->audioSampleRate);
+
         // Allocate dynamic variables (don't forget to remove them at cleanup() )
         buffer      = new CyclicBuffer(params.bufferSize);
-        filter      = new LowFilterButterworth(params.filterFreq, context->audioSampleRate);
+        filter      = filterFactory.make("low-butterworth", params.filterFreq);
         freqDecoder = new FreqDecoder();
 
     } catch( const std::exception& e ) {
