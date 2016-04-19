@@ -24,8 +24,6 @@ protected:
     float* x_;
     float* y_;
 
-    virtual void calcParams() {;}
-
     float cutoff_;
     float sampling_;
 };

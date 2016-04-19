@@ -6,8 +6,6 @@
 class LowFilterButterworth: public Filter {
 public:
     LowFilterButterworth(float cutoffFreq, float samplingFreq);
-protected:
-    void calcParams();
 };
 
 #endif // FILTERBUTTERWORTH_H
