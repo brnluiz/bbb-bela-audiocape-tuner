@@ -1,14 +1,10 @@
 /*
- * assignment1_crossover
+ * assignment_tuner
  * Student: Bruno Luiz da Silva
  * ID: 150724708
  * RTDSP 2016
  *
- * First assignment for ECS732 RTDSP, to implement a 2-way audio crossover
- * using the BeagleBone Black.
- *
  * Andrew McPherson and Victor Zappi
- * Modified by Becky Stewart
  * Queen Mary, University of London
  */
 
@@ -71,11 +67,11 @@ float detectFrequency(CyclicBuffer *samples, int sampleFreq) {
     int detectedPeriod    = 0;
     int windowSize        = samples->getSize();
 
-    float threshAutoCorr = 10.00;
+    const float threshAutoCorr = THRESHOLD_AUTOCORR;
 
     // Will save the detected frequencies + the auto correlation index
     int peaksIdx            = 0;
-    const int peakFreqsSize = 8;
+    const int peakFreqsSize = PEAKS_BUFFER_SIZE;
     PeakData peaksData[peakFreqsSize];
 
     for (int i = 0; i < windowSize && (state != PEAKDETECT_FINAL); i++) {
@@ -128,6 +124,7 @@ float detectFrequency(CyclicBuffer *samples, int sampleFreq) {
             bestAutoCorrIdx = i;
         }
     }
+
     // Protection against divisions by 0 and unwanted frequencies
     if (detectedPeriod < 1 && (peaksData[bestAutoCorrIdx].autoCorr < threshAutoCorr)) {
       return 0;

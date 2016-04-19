@@ -1,10 +1,8 @@
 /*
- * assignment1_crossover
- * RTDSP 2015
+ * assignment_tuner
  * Student: Bruno Luiz da Silva
  * ID: 150724708
- * First assignment for ECS732 RTDSP, to implement a 2-way audio crossover
- * using the BeagleBone Black.
+ * RTDSP 2016
  *
  * Andrew McPherson and Victor Zappi
  * Queen Mary, University of London
