@@ -8,7 +8,8 @@ SOURCES += main.cpp \
     cyclicbuffer.cpp \
     filter.cpp \
     lowfilterbutterworth.cpp \
-    freqdecoder.cpp
+    freqdecoder.cpp \
+    filterfactory.cpp
 
 HEADERS += \
     cyclicbuffer.h \
@@ -17,5 +18,6 @@ HEADERS += \
     appparameters.h \
     lowfilterbutterworth.h \
     freqdecoder.h \
-    peakdata.h
+    peakdata.h \
+    filterfactory.h
 

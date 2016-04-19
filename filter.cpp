@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <cstdio>
 
+#include <stdexcept>
+
 Filter::Filter(float order, float cutoffFreq, float samplingFreq):
     order_(order), cutoff_(cutoffFreq), sampling_(samplingFreq) {
     setOrder(order);
@@ -29,8 +31,7 @@ void Filter::setOrder(int order) {
     y_ = (float *) malloc(sizeof(float)*(size_+1));
 
     if(a_ == NULL || b_ == NULL || x_ == NULL || y_ == NULL) {
-        printf("Out of memory!");
-        exit(1);
+        throw std::bad_alloc();
     }
 
     for(int i = 0; i < size_; i++) {
@@ -76,7 +77,7 @@ float Filter::run(float sample) {
 bool Filter::setParam(char param, int idx, float value)
 {
     if(idx > order_) {
-        return false;
+        throw std::out_of_range("'idx' is out of range");
     }
 
     switch (param) {
@@ -93,7 +94,7 @@ bool Filter::setParam(char param, int idx, float value)
             y_[idx] = value;
             break;
         default:
-            return false;
+            throw std::invalid_argument("'param' is not a valid argument");
     }
 
     return true;
@@ -101,7 +102,7 @@ bool Filter::setParam(char param, int idx, float value)
 
 float Filter::getParam(char param, int idx) {
     if(idx > order_) {
-        return 0;
+        throw std::out_of_range("'idx' is out of range");
     }
 
     switch (param) {
@@ -115,6 +116,6 @@ float Filter::getParam(char param, int idx) {
         case 'y':
             return y_[idx];
         default:
-            return 0;
+            throw std::invalid_argument("'param' is not a valid argument");
     }
 }

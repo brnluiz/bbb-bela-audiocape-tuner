@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <cstdio>
 
+#include <stdexcept>
+
 CyclicBuffer::CyclicBuffer(int bufferSize): filled_(false), idx_(0), size_(bufferSize) {
     setSize(bufferSize);
 }
@@ -32,7 +34,7 @@ float CyclicBuffer::get(int pos) {
     if (pos < size_) {
         return buffer_[pos];
     } else {
-        return -1;
+        throw std::out_of_range("The position is higher than the size (out of range)");
     }
 }
 
@@ -47,8 +49,7 @@ void CyclicBuffer::setSize(int size) {
     buffer_ = (float *) malloc(sizeof(float)*(size_+1));
 
     if(buffer_ == NULL) {
-        printf("Out of memory!");
-        exit(1);
+        throw std::bad_alloc();
     }
 
     reset();

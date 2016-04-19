@@ -2,11 +2,10 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+
 #include <string>
-
+#include <stdexcept>
 #include <iostream>
-
-using namespace std;
 
 FreqDecoder::FreqDecoder() {
     int tableSize = sizeof(NotesParameters)*(NUM_NOTES*NUM_OCTAVES + 2);
@@ -129,8 +128,6 @@ FreqDecoder::FreqDecoder() {
         {9, "A",  7040, 8},
         {10, "Bb", 7459, 8},
         {11, "B",  7902, 8},
-
-        {666, "err", 0, 666},
     };
 
     memcpy(table_, notes, tableSize);
@@ -147,11 +144,11 @@ NotesParameters FreqDecoder::get(float freq) {
         }
     }
 
-    return table_[NUM_OCTAVES*NUM_NOTES];
+    throw std::runtime_error("No note detected for this frequency");
 }
 
-string FreqDecoder::getNote(float freq) {
-    return string(get(freq).name);
+std::string FreqDecoder::getNote(float freq) {
+    return std::string(get(freq).name);
 }
 
 int FreqDecoder::getOctave(float freq) {
