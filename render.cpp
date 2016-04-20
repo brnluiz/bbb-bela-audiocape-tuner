@@ -11,7 +11,7 @@
 #include <BeagleRT.h>
 #include <cmath>
 #include <rtdk.h>
-#include "circularbuffer.h"
+#include "buffer.h"
 #include "filterfactory.h"
 #include "settings.h"
 #include "appparameters.h"
@@ -21,7 +21,7 @@
 #include <iostream>
 #include <string>
 
-CircularBuffer* buffer;
+Buffer* buffer;
 Filter* filter;
 FreqDecoder* freqDecoder;
 
@@ -34,7 +34,7 @@ bool setup(BeagleRTContext *context, void *userData) {
         FilterFactory filterFactory(context->audioSampleRate);
 
         // Allocate dynamic variables (don't forget to remove them at cleanup() )
-        buffer      = new CircularBuffer(params.bufferSize);
+        buffer      = new Buffer(params.bufferSize);
         filter      = filterFactory.make("low-butterworth", params.filterFreq);
         freqDecoder = new FreqDecoder();
 
@@ -47,7 +47,7 @@ bool setup(BeagleRTContext *context, void *userData) {
     return true;
 }
 
-float autoCorr(CircularBuffer *samples, int lag) {
+float autoCorr(Buffer *samples, int lag) {
     float sum = 0;
     int windowSize = samples->getSize();
 
@@ -59,7 +59,7 @@ float autoCorr(CircularBuffer *samples, int lag) {
     return sum;
 }
 
-float detectFrequency(CircularBuffer *samples, int sampleFreq) {
+float detectFrequency(Buffer *samples, int sampleFreq) {
     float sum             = 0;
     float sumOld          = 0;
     int thresh            = 0;
@@ -146,29 +146,32 @@ void render(BeagleRTContext *context, void *userData) {
                 // Filter the input based on the passed cut-off frequency
                 float filtered = filter->run(input);
 
-                // If the buffer is full, then detect the frequency (it needs a certain amount of
-                // samples to work)
-                if (buffer->isFilled()) {
-                    float freq = detectFrequency(buffer, context->audioSampleRate);
-
-                    // Output for the user
-                    if (freq != 0) {
-                        NotesParameters freqData = freqDecoder->get(freq);
-                        std::string indication = "Tuned!";
-
-                        if (freq > freqData.freq*1.01) {
-                            indication = "Decrease the frequency!";
-                        } else if(freq < freqData.freq*.99) {
-                            indication = "Increase the frequency!";
-                        }
-
-                        rt_printf("Frequency: %4.2f | Note: %s (%4.2f) | %s\n",
-                                  freq, freqData.name, freqData.freq, indication.c_str());
-                    }
-                    buffer->reset(true);
+                // If buffer is not full, then insert a sample and continue the loop
+                if(!buffer->isFull()) {
+                    buffer->insert(filtered);
+                    continue;
                 }
 
-                buffer->insert(filtered);
+                // If the buffer is full, then detect the frequency (it needs a certain amount of samples to work)
+                float freq = detectFrequency(buffer, context->audioSampleRate);
+
+                // Output for the user
+                if (freq != 0) {
+                    NotesParameters freqData = freqDecoder->get(freq);
+                    std::string indication = "Tuned!";
+
+                    if (freq > freqData.freq*1.01) {
+                        indication = "Decrease the frequency!";
+                    } else if(freq < freqData.freq*.99) {
+                        indication = "Increase the frequency!";
+                    }
+
+                    rt_printf("Frequency: %4.2f | Note: %s (%4.2f) | %s\n",
+                              freq, freqData.name, freqData.freq, indication.c_str());
+                }
+
+                // Reset the whole buffer for a new iteration
+                buffer->reset(true);
         }
     } catch( const std::exception& e ) {
         std::cerr << "[exception] " << e.what() << std::endl;

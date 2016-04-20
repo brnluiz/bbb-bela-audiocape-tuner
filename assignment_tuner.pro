@@ -9,7 +9,7 @@ SOURCES += main.cpp \
     lowfilterbutterworth.cpp \
     freqdecoder.cpp \
     filterfactory.cpp \
-    circularbuffer.cpp
+    buffer.cpp
 
 HEADERS += \
     settings.h \
@@ -19,5 +19,5 @@ HEADERS += \
     freqdecoder.h \
     peakdata.h \
     filterfactory.h \
-    circularbuffer.h
+    buffer.h
 

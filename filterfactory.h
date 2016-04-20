@@ -14,8 +14,7 @@
 #include "filter.h"
 #include <string>
 
-class FilterFactory
-{
+class FilterFactory {
 public:
     FilterFactory(float sampleFreq);
     Filter *make(std::string filter, float cutoffFreq);

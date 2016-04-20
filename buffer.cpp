@@ -8,39 +8,34 @@
  * Queen Mary, University of London
  */
 
-#include "circularbuffer.h"
+#include "buffer.h"
 #include <cstdlib>
 #include <cstdio>
 
 #include <stdexcept>
 
-CircularBuffer::CircularBuffer(int bufferSize): filled_(false), idx_(0), size_(bufferSize) {
+Buffer::Buffer(int bufferSize): full_(false), idx_(0), size_(bufferSize), getIdx_(0) {
     setSize(bufferSize);
 }
 
-CircularBuffer::~CircularBuffer() {
+Buffer::~Buffer() {
     free(buffer_);
 }
 
-bool CircularBuffer::insert(float item) {
+bool Buffer::insert(float item) {
     buffer_[idx_] = item;
     idx_++;
 
-    if (filled_ == false && idx_ == size_) {
-        filled_ = true;
-        idx_ = 0;
+    if (full_ == false && idx_ == size_) {
+        full_ = true;
 
-        return true;
-    } else if(idx_ == size_) {
-        idx_ = 0;
-
-        return true;
+        return false;
     }
 
-    return false;
+    return true;
 }
 
-float CircularBuffer::get(int pos) {
+float Buffer::get(int pos) {
     if (pos < size_) {
         return buffer_[pos];
     } else {
@@ -48,11 +43,11 @@ float CircularBuffer::get(int pos) {
     }
 }
 
-bool CircularBuffer::isFilled() {
-    return filled_;
+bool Buffer::isFull() {
+    return full_;
 }
 
-void CircularBuffer::setSize(int size) {
+void Buffer::setSize(int size) {
     free(buffer_);
 
     size_ = size;
@@ -65,12 +60,12 @@ void CircularBuffer::setSize(int size) {
     reset();
 }
 
-int CircularBuffer::getSize() {
+int Buffer::getSize() {
     return size_;
 }
 
-void CircularBuffer::reset(bool fast) {
-    filled_ = false;
+void Buffer::reset(bool fast) {
+    full_ = false;
     idx_ = 0;
 
     if(fast) {
